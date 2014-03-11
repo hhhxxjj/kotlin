@@ -49,20 +49,14 @@ class LiteralFunctionTranslator(context: TranslationContext) : AbstractTranslato
         val tracker = functionContext.usageTracker()!!
 
         val isRecursive = tracker.isCaptured(descriptor)
-        val isNamed = !descriptor.getName().isSpecial()
 
-        if (isNamed) {
-            if (isRecursive) {
-                lambda.setName(tracker.getNameForCapturedDescriptor(descriptor))
-            }
-        }
-        else {
-            assert(!isRecursive) { "Function with special name can not be recursive(captured), descriptor: $descriptor" }
+        if (isRecursive) {
+            lambda.setName(tracker.getNameForCapturedDescriptor(descriptor))
         }
 
         val suggestedName = getSuggestedName(functionContext, descriptor)
 
-        if (tracker.hasCaptured()) {
+        if (tracker.hasCapturedExceptContaining()) {
             val lambdaCreator = simpleReturnFunction(invokingContext.scope(), lambda)
             return lambdaCreator.withCapturedParameters(functionContext, invokingContext, suggestedName)
         }

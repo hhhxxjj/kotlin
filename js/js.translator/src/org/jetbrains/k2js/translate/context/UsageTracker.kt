@@ -39,21 +39,18 @@ class UsageTracker(
     public fun used(descriptor: CallableDescriptor) {
         if (isCaptured(descriptor)) return
 
-        when (descriptor) {
-            is CallableMemberDescriptor -> {
-                // local named function
-                if (descriptor.getVisibility() == Visibilities.LOCAL) {
-                    captureIfNeed(descriptor)
-                }
-            }
-            is VariableDescriptor -> {
-                if (descriptor !is PropertyDescriptor) {
-                    captureIfNeed(descriptor)
-                }
-            }
-            is ReceiverParameterDescriptor -> {
-                captureIfNeed(descriptor)
-            }
+        // local named function
+        if (descriptor is FunctionDescriptor && descriptor.getVisibility() == Visibilities.LOCAL) {
+            assert(!descriptor.getName().isSpecial()) { "Function with special name can not be captured, descriptor: $descriptor" }
+            captureIfNeed(descriptor)
+        }
+        // local variable
+        else if (descriptor is VariableDescriptor && descriptor !is PropertyDescriptor) {
+            captureIfNeed(descriptor)
+        }
+        // this or receiver
+        else if (descriptor is ReceiverParameterDescriptor) {
+            captureIfNeed(descriptor)
         }
     }
 
@@ -84,7 +81,7 @@ class UsageTracker(
 
 public fun UsageTracker.getNameForCapturedDescriptor(descriptor: CallableDescriptor): JsName? = capturedDescriptorToJsName.get(descriptor)
 
-public fun UsageTracker.hasCaptured(): Boolean {
+public fun UsageTracker.hasCapturedExceptContaining(): Boolean {
     val hasNotCaptured =
             capturedDescriptorToJsName.isEmpty() ||
             (capturedDescriptorToJsName.size == 1 && capturedDescriptorToJsName.containsKey(containingDescriptor))
